@@ -1,0 +1,56 @@
+// troubleshooting commands for junos
+
+// switches
+// mac learning - if you plug a new host in and the mac learning log does not update you may need to restart the switch
+// if there is a loop in the network you may find that the mac table becomes exhausted
+
+>show ethernet-switching mac-learning-log
+
+// look for mac learning errors
+
+>show ethernet-switching statistics mac-learning
+//e.g. output
+//  ge-2/0/10.0               7574                574                 7566 (this indicates an issue)
+
+//if you find errors look for more detail about what is causing them
+
+>show ethernet-switching statistics mac-learning detail interface ge-2/0/10.0
+
+//e.g. output indicating the problem; in this case an invalid vlan
+    Interface: ge-2/0/10.0
+    Learning message from local packets:   7574
+    Learning message from transit packets: 574
+    Learning message with error:           7566
+      Invalid VLAN:            7566       Invalid MAC:                  0
+      Security violation:         0       Interface down:               0
+      Incorrect membership:       0       Interface limit:              0
+      MAC move limit:             0       VLAN limit:                   0
+      Invalid VLAN index:         0       Interface not learning:       0
+      No nexthop:                 0       MAC learning disabled:        0
+      Others:                     0       VLAN membership limit:        0
+
+//show the switching table to see which MAC addresses are linked to which interfaces and VLANs
+
+>show ethernet-switching table
+
+//or just for a specific VLAN
+
+>show ethernet-switching table vlan dev
+
+//e.g. output
+  VLAN	            MAC address       Type         Age Interfaces
+  dev               *                 Flood          - All-members
+  dev               00:11:f2:d9:9d:bc Learn          0 ge-0/0/0.0
+  dev               00:25:dc:18:02:c7 Static         - Router
+
+//or show the ethernet-switching table for just one interface
+
+>show ethernet-switching table interface ge-0/0/0.0
+
+//e.g. output
+
+Ethernet-switching table: 1 unicast entries
+  VLAN	            MAC address       Type         Age Interfaces
+  dev               *                 Flood          - All-members
+  dev               00:11:f2:d9:9d:bc Learn          0 ge-0/0/0.0
+
