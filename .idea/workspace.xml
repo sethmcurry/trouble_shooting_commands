@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2ed1f91e-c6c6-4119-b671-75fcd606e751" name="Default" comment="">
-      <change type="MOVED" beforePath="$PROJECT_DIR$/junos.txt" afterPath="$PROJECT_DIR$/junos_layer2.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/junos_layer2.txt" afterPath="$PROJECT_DIR$/junos_layer2.txt" />
     </list>
     <ignored path="trouble_shooting_commands.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -27,8 +26,8 @@
       <file leaf-file-name="junos_layer2.txt" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/junos_layer2.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.63461536">
-              <caret line="53" column="0" selection-start-line="53" selection-start-column="0" selection-end-line="53" selection-end-column="0" />
+            <state vertical-scroll-proportion="1.3846154">
+              <caret line="72" column="123" selection-start-line="72" selection-start-column="123" selection-end-line="72" selection-end-column="123" />
               <folding />
             </state>
           </provider>
@@ -214,8 +213,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/junos_layer2.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.63461536">
-          <caret line="53" column="0" selection-start-line="53" selection-start-column="0" selection-end-line="53" selection-end-column="0" />
+        <state vertical-scroll-proportion="1.3846154">
+          <caret line="72" column="123" selection-start-line="72" selection-start-column="123" selection-end-line="72" selection-end-column="123" />
           <folding />
         </state>
       </provider>

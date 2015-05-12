@@ -14,6 +14,9 @@ ge-0/0/0.0              down  up   eth-switch
 //look at the config
 
 >show configuration | display set | grep ge-0/0/0
+
+//e.g. output, notice the disable statement; this puts the interface into an 'Admin Down' state
+
 set interfaces ge-0/0/0 unit 0 disable
 set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members 25
 
@@ -26,15 +29,20 @@ set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members 25
 //look again now and it should be up
 
 >show configuration | display set | grep ge-0/0/0
+
+//e.g. output //now the 'Admin' is up but the 'Link' is down; this indicates a physical problem so check that the
+//connected device is turned on and that the cable is patched correctly
+
 Interface               Admin Link Proto    Local                 Remote
 ge-0/0/0.0              up    down eth-switch
 
-//now the 'Admin' is up but the 'Link' is down; this indicates a physical problem so check that the connected device is turned on and that the cable is patched correctly
+
 //we have now patched the device and can see that it is up; note that 'Auto-negotiation' is enabled
 
 >show interfaces ge-0/0/0
 
-//e.g.
+//e.g. output
+
 Physical interface: ge-0/0/0, Enabled, Physical link is Up
   Interface index: 136, SNMP ifIndex: 508
   Link-level type: Ethernet, MTU: 1514, Link-mode: Full-duplex, Speed: 1000mbps, BPDU Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled,
@@ -62,7 +70,7 @@ Physical interface: ge-0/0/0, Enabled, Physical link is Up
 
 
 // mac learning - if you plug a new host in and the mac learning log does not update you may need to restart the switch
-// if there is a loop in the network you may find that the mac table becomes exhausted
+// if there is a loop in the network you may find that the mac table becomes exhausted and will not learn any more addresses
 
 >show ethernet-switching mac-learning-log
 
