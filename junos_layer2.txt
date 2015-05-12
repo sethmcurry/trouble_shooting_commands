@@ -2,6 +2,65 @@
 
 // L2 commands (switching type commands)
 
+//check the basics - is the interface up?
+
+> show interfaces ge-0/0/0.0 terse
+
+//e.g. output; note how the Admin link is reported as down - this means it has intentionally been disabled
+
+Interface               Admin Link Proto    Local                 Remote
+ge-0/0/0.0              down  up   eth-switch
+
+//look at the config
+
+>show configuration | display set | grep ge-0/0/0
+set interfaces ge-0/0/0 unit 0 disable
+set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members 25
+
+//now enable the interface to bring it up
+
+>configure
+#set interfaces ge-0/0/0.0 enable
+#commit
+
+//look again now and it should be up
+
+>show configuration | display set | grep ge-0/0/0
+Interface               Admin Link Proto    Local                 Remote
+ge-0/0/0.0              up    down eth-switch
+
+//now the 'Admin' is up but the 'Link' is down; this indicates a physical problem so check that the connected device is turned on and that the cable is patched correctly
+//we have now patched the device and can see that it is up; note that 'Auto-negotiation' is enabled
+
+>show interfaces ge-0/0/0
+
+//e.g.
+Physical interface: ge-0/0/0, Enabled, Physical link is Up
+  Interface index: 136, SNMP ifIndex: 508
+  Link-level type: Ethernet, MTU: 1514, Link-mode: Full-duplex, Speed: 1000mbps, BPDU Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled,
+  Flow control: Enabled, Auto-negotiation: Enabled, Remote fault: Online
+
+//if we are connecting to an older device we may need to change the speed or duplex for the interface
+//I am going to disable auto-negotiation and set the interface to 1g full-duplex
+
+>config
+#set interfaces ge-0/0/0 gigether-options no-auto-negotiation
+#set interfaces ge-0/0/0 link-mode full-duplex speed 1g
+
+//now if we show interface
+
+#run show interfaces ge-0/0/0
+
+//note that when we run show commands from within the config mode we generally need to use the word 'run' in front of them
+
+//e.g. output - now we can see that auto-negotiation' is disabled; the switch port is now set to 1g full-duplex
+
+Physical interface: ge-0/0/0, Enabled, Physical link is Up
+  Interface index: 136, SNMP ifIndex: 508
+  Link-level type: Ethernet, MTU: 1514, Link-mode: Full-duplex, Speed: 1000mbps, BPDU Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled,
+  Flow control: Enabled, Auto-negotiation: Disabled, Remote fault: Online
+
+
 // mac learning - if you plug a new host in and the mac learning log does not update you may need to restart the switch
 // if there is a loop in the network you may find that the mac table becomes exhausted
 
