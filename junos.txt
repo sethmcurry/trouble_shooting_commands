@@ -1,6 +1,7 @@
-// troubleshooting commands for junos
+// trouble shooting commands for junos
 
-// switches
+// L2 commands (switching type commands)
+
 // mac learning - if you plug a new host in and the mac learning log does not update you may need to restart the switch
 // if there is a loop in the network you may find that the mac table becomes exhausted
 
@@ -16,7 +17,10 @@
 
 >show ethernet-switching statistics mac-learning detail interface ge-2/0/10.0
 
-//e.g. output indicating the problem; in this case an invalid vlan
+//e.g. output indicating the problem; in this case an invalid vlan; in this case the errors where due to untagged vlan 1 on a connected HP switch
+// to resove this I used the command >set interfaces ge-2/0/10 unit 0 family ethernet-switching native-vlan-id 1
+// this un-tags vlan 1
+
     Interface: ge-2/0/10.0
     Learning message from local packets:   7574
     Learning message from transit packets: 574
@@ -53,4 +57,109 @@ Ethernet-switching table: 1 unicast entries
   VLAN	            MAC address       Type         Age Interfaces
   dev               *                 Flood          - All-members
   dev               00:11:f2:d9:9d:bc Learn          0 ge-0/0/0.0
+
+//remember you can grep on output too so if you know the mac address you can do something like this
+
+>show ethernet-switching table 00:11:f2:d9:9d:bc
+
+//aggregated ethernet trouble shooting; in this case ae5 is our aggregated ethernet interface or LACP trunk
+
+>show interfaces ae5
+
+//e.g. output
+
+Physical interface: ae5, Enabled, Physical link is Up
+  Interface index: 133, SNMP ifIndex: 649
+  Link-level type: Ethernet, MTU: 1514, Speed: 2Gbps, BPDU Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled,
+  Minimum links needed: 1, Minimum bandwidth needed: 0
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x0
+  Current address: bb:e1:7f:cb:60:18, Hardware address: bb:e1:7f:cb:60:18
+  Last flapped   : 2015-02-06 18:40:17 UTC (13w3d 20:58 ago)
+  Input rate     : 44314912 bps (14337 pps)
+  Output rate    : 61350952 bps (12183 pps)
+
+  Logical interface ae5.0 (Index 70) (SNMP ifIndex 650)
+    Description: Trunk to HP Dist Switch Port A1, A2
+    Flags: SNMP-Traps 0x0 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input :      32554103          0    5517372855            0
+        Output:         58717          0       3775208            0
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Protocol eth-switch
+      Flags: Trunk-Mode
+
+//look to see if the link is up, if not check if you have told the switch that you want to have at least 5 aggregated ethernet ports in use
+
+> show configuration | display set | grep aggregated-devices
+
+//e.g output
+
+set chassis aggregated-devices ethernet device-count 5
+
+//if this is set to less then the number of devices (ae interfaces that you have configured) you need to increase the count and then commit the config like so
+
+>set chassis aggregated-devices ethernet device-count 6
+
+//also look at the 'Last flapped' and the 'Input rate' | 'Output rate' lines if there is input in one direction and not the other you may want to check
+//the underlying interfaces
+
+>show configuration | display set | grep ae5
+
+//e.g. output
+set interfaces xe-0/0/1 ether-options 802.3ad ae5
+set interfaces xe-1/0/1 ether-options 802.3ad ae5
+set interfaces ae5 aggregated-ether-options link-speed 1g
+set interfaces ae5 aggregated-ether-options lacp active
+set interfaces ae5 unit 0 description "Trunk to HP Dist Switch Port A1, A2"
+set interfaces ae5 unit 0 family ethernet-switching port-mode trunk
+set interfaces ae5 unit 0 family ethernet-switching vlan members 3-5
+set interfaces ae5 unit 0 family ethernet-switching vlan members 11
+set interfaces ae5 unit 0 family ethernet-switching native-vlan-id 9
+
+//now we know that xe-0/0/1 and xe-1/0/1 are the interfaces included in the bundle lets have a look at their status
+
+>show interfaces xe-0/0/1
+
+//e.g. output
+
+Physical interface: xe-0/0/1, Enabled, Physical link is Up
+  Interface index: 161, SNMP ifIndex: 543
+  Description: Trunk to HP Dist Switch Port A1
+  Link-level type: Ethernet, MTU: 1514, Speed: 1000mbps, Duplex: Full-Duplex, BPDU Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled,
+  Flow control: Disabled, Auto-negotiation: Enabled, Remote fault: Offline, Media type: Copper
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x0
+  Link flags     : None
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: cc:e1:7f:cb:60:17, Hardware address: cc:e1:7f:cb:60:08
+  Last flapped   : 2015-02-07 15:39:26 UTC (13w3d 00:13 ago)
+  Input rate     : 16015416 bps (5515 pps)
+  Output rate    : 28039112 bps (5544 pps)
+  Active alarms  : None
+  Active defects : None
+  Interface transmit statistics: Disabled
+
+  Logical interface xe-0/0/1.0 (Index 181) (SNMP ifIndex 547)
+    Flags: 0x0 Encapsulation: ENET2
+    Protocol aenet, AE bundle: ae5.0
+
+//check for errors which might indicate a speed or duplex mismatch or posibbly a physical problem with the cable; also check the config for this interface
+
+>show configuration | display set | grep xe-0/0/1
+
+//e.g. output
+
+ set interfaces xe-0/0/1 description "Trunk to HP Dist Switch Port A1"
+ set interfaces xe-0/0/1 enable
+ set interfaces xe-0/0/1 ether-options speed 1g
+ set interfaces xe-0/0/1 ether-options 802.3ad ae5
+
+ //do this for any ports associated with the ae bundle; again check for speed or duplex mismatches between the two devices that you are trying to connect
+ //above you can see that I have changes this interface to be 1g because the interface on the other side is only 1g
+
 
