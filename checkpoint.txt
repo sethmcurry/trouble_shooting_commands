@@ -1,0 +1,196 @@
+//Checkpoint commmands note that a lot of these commands will only work in expert mode and this list was mainly compiled
+//when working on splat so it may already be outdated
+
+//On splat you may not see packets hitting the firewall process so you can use tcpdump; if i am looking for connections
+//from host 10.231.59.157 i can run the following command
+
+tcpdump -nni eth2c0 host 10.231.59.157
+
+//if you see traffic hitting the interface but not the firewall process check your routes - you may need to add a route
+//or adjust the anti-spoofing
+
+//if you need to see the list of interfaces try this
+
+fw ctl iflist
+
+//to see the routing table on ipso
+
+netstat -rn
+
+//on splat you may be able to use
+
+route -n
+
+//in VSX you can see the routing table of the context or virtual system
+//display routing table for a vs:
+
+cpstat -vs <id> os -f routing
+
+//zdebug
+
+//To quickly determine the cause of dropped packets from the CLI of a gateway, run the command "fw ctl zdebug drop".
+
+fw ctl zdebug drop | grep 10.231.59.157
+
+//now if you want to see where in the process the packet is being dropped use fw monitor
+//the -m iI shows the packet entering the process and the oO shows the packet leaving the process
+
+fw monitor -e "accept ((src=10.231.59.157) or (dst=10.231.59.157));" -m iIoO
+
+//the above will show you the traffic for this host in both directions
+//if you see a packet entering the network but now coming back check the routes within your network - the network
+//may be trying to route the packet back to it's source via a different path
+
+//you can do more complex strings too
+
+fw monitor -e "accept ((src=172.16.128.1 and 172.16.128.2, dst=192.168.128.1 and 192.168.128.2) or (src=192.168.128.1 and 192.168.128.2, dst=172.16.128.1 and 172.16.128.2));" -m iIoO
+
+//also you should be able to see packets from a net range
+
+
+//to filter packets that are part of a network or a range of ip addresses
+
+fw monitor -e accept netof src=192.168.10.0;
+
+//also you can search for soure and dest port
+
+fw monitor -e accept sport=21 or dport=21 and src=192.168.126.1 or dst=192.168.126.1;
+
+//Cluster state and fail over
+
+//check the cluster state
+
+cphaprob state
+
+//Cluster fail over can be tested by placing one of the monitored devices into a problem state
+//use the command cphaprob -d <device> -s problem report
+//on the device you want to fail from run
+
+cphaprob -d Filter -s problem report
+
+//check the state again after downing one node
+
+cphaprob state
+
+//e.g. output
+
+Cluster Mode: Load Sharing (Multicast)
+Number Unique Address Assigned Load State
+1 (local) 192.168.100.1 0% down
+2 192.168.100.2 100% active attention
+
+//Now you can fail it back by reporting the device as ok
+
+cphaprob -d Filter -s ok report
+
+//Synchronisation statistics can be viewed with the following command
+
+cphaprob syncstat
+
+//some other useful cluster xl commands
+
+cphaprob -a if
+cphaprob -ia list
+fw ctl pstat
+
+//VSX
+//remember that with VSX you need always to say what context or virtual firewall instance you are in
+//to change to a specific virtual firewall where it says <id> below you need to state your firewall instance id
+
+context <id>
+
+//or in expert mode
+
+vsx set <id>
+
+//check status:
+
+fw stat -vs <id>
+fw vsx stat <id>
+
+cpstat // (then look at the options)
+
+//display routing table for a vs:
+
+cpstat -vs <id> os -f routing
+
+//when you run fw mon on a VSX system you need to specify the v system with -v
+//so to run a fw mon on vs id 9 try
+
+fw monitor  -v 9 -e "accept ((src=172.16.125.39 and dst=172.19.116.103) or (src=172.19.116.103 and dst=172.16.125.39));" -m iIoO
+
+//find the name of a virtual system
+
+fw vsx stat <id>
+
+//e.g.
+
+fw vsx stat 9
+
+//to determine load sharing
+
+cphaprob state
+
+//get detail about the VS via the ID
+
+vsx stat -l -vs <ID>
+
+//VPN
+
+vpn crlview
+
+vpn accel -d vpnx stat -l
+
+//to see what's going on in the VPN
+//vpn tunnelutil
+
+
+vpn tu
+
+//e.g. output
+
+**********     Select Option     **********
+
+(1)             List all IKE SAs
+(2)             List all IPsec SAs
+(3)             List all IKE SAs for a given peer (GW) or user (Client)
+(4)             List all IPsec SAs for a given peer (GW) or user (Client)
+(5)             Delete all IPsec SAs for a given peer (GW)
+(6)             Delete all IPsec SAs for a given User (Client)
+(7)             Delete all IPsec+IKE SAs for a given peer (GW)
+(8)             Delete all IPsec+IKE SAs for a given User (Client)
+(9)             Delete all IPsec SAs for ALL peers and users
+(0)             Delete all IPsec+IKE SAs for ALL peers and users
+
+(Q)             Quit
+
+
+//also try
+
+vpn debug trunc
+
+//and
+
+vpn debug ikeon
+
+//results go to the file:
+
+$FWDIR/log/ike.elg
+
+//when you are done turn off the ike debug
+
+vpn debug ikeoff
+
+//look for overlapping encryption domains
+
+vpn overlap_encdom
+
+//debug to /var/log/messages - be careful not to fill up the disk
+
+fwaccel dbg -m general all
+
+
+
+
+
+
